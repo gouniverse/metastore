@@ -1,4 +1,4 @@
-# metastore
+# Meta Store
 
 ## Installation
 ```
