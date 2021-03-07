@@ -1,5 +1,7 @@
 # Meta Store
 
+Store to database additional information to anything using metas (key - value) pairs
+
 ## Installation
 ```
 go get -u github.com/gouniverse/metastore
