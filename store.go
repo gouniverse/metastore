@@ -11,12 +11,20 @@ import (
 
 // Store defines a session store
 type Store struct {
-	metaTableName string
-	db            *gorm.DB
+	metaTableName      string
+	db                 *gorm.DB
+	automigrateEnabled bool
 }
 
 // StoreOption options for the cache store
 type StoreOption func(*Store)
+
+// WithAutoMigrate sets the table name for the cache store
+func WithAutoMigrate(automigrateEnabled bool) StoreOption {
+	return func(s *Store) {
+		s.automigrateEnabled = automigrateEnabled
+	}
+}
 
 // WithDriverAndDNS sets the driver and the DNS for the database for the cache store
 func WithDriverAndDNS(driverName string, dsn string) StoreOption {
@@ -56,9 +64,16 @@ func NewStore(opts ...StoreOption) *Store {
 		log.Panic("Meta store: metaTableName is required")
 	}
 
-	store.db.Table(store.metaTableName).AutoMigrate(&Meta{})
+	if store.automigrateEnabled == true {
+		store.AutoMigrate()
+	}
 
 	return store
+}
+
+// AutoMigrate auto migrate
+func (st *Store) AutoMigrate() {
+	st.db.Table(st.metaTableName).AutoMigrate(&Meta{})
 }
 
 // FindByKey finds a cache by key
