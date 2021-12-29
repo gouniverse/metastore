@@ -113,7 +113,7 @@ func (st *Store) GetJSON(objectType string, objectID string, key string, valueDe
 	if meta != nil {
 		jsonValue := meta.Value
 		var e interface{}
-		jsonError := json.Unmarshal([]byte(jsonValue), e)
+		jsonError := json.Unmarshal([]byte(jsonValue), &e)
 		if jsonError != nil {
 			return valueDefault
 		}
