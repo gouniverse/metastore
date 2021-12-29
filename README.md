@@ -39,12 +39,14 @@ metaStore = metastore.NewStore(metastore.WithGormDb(databaseInstance), metastore
 
 ## Usage
 
+- Set a meta values (for user with ID 1)
 ```
-// Set metas for user with ID 1
 metaStore.Set("user", "1", "verified", "yes")
 metaStore.Set("user", "1", "verified_at", "2021-03-12")
-  
-// Get metas for user with ID 1 (if not found a default value is returned)
+```
+
+- Get meta values (for user with ID 1), if not found a default value is returned
+```
 log.Println(metaStore.Get("user", "1", "verified", ""))
 log.Println(metaStore.Get("user", "1", "verified_at", ""))
 ```
