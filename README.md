@@ -48,3 +48,9 @@ models.GetMetaStore().Set("user", "1", "verified_at", "2021-03-12")
 log.Println(models.GetMetaStore().Get("user", "1", "verified", ""))
 log.Println(models.GetMetaStore().Get("user", "1", "verified_at", ""))
 ```
+
+## Changelog
+
+2021.12.29 - Added tests badge
+
+2021.12.29 - Added tests
