@@ -25,7 +25,7 @@ The following schema is used for the database.
 | object_id   | String (40)     |
 | meta_key    | String (255)     |
 | meta_value  | Long Text        |
-| created_At  | DateTime         |
+| created_at  | DateTime         |
 | updated_at  | DateTime         |
 | deleted_at  | DateTime         |
 
