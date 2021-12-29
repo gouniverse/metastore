@@ -7,6 +7,21 @@ Store to database additional information to anything using metas (key - value) p
 go get -u github.com/gouniverse/metastore
 ```
 
+## Table Schema ##
+
+The following schema is used for the database.
+
+| meta        |                  |
+|-------------|------------------|
+| id          | String, UniqueId |
+| object_type | String (100)     |
+| object_id   | String (40)     |
+| meta_key    | String (255)     |
+| meta_value  | Long Text        |
+| created_At  | DateTime         |
+| updated_at  | DateTime         |
+| deleted_at  | DateTime         |
+
 ## Setup
 
 ```
