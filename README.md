@@ -40,13 +40,13 @@ metaStore = metastore.NewStore(metastore.WithGormDb(databaseInstance), metastore
 ## Usage
 
 ```
-// Set a meta key with value
-models.GetMetaStore().Set("user", "1", "verified", "yes")
-models.GetMetaStore().Set("user", "1", "verified_at", "2021-03-12")
+// Set metas for user with ID 1
+metaStore.Set("user", "1", "verified", "yes")
+metaStore.Set("user", "1", "verified_at", "2021-03-12")
   
-// Getting the value with default if not found
-log.Println(models.GetMetaStore().Get("user", "1", "verified", ""))
-log.Println(models.GetMetaStore().Get("user", "1", "verified_at", ""))
+// Get metas for user with ID 1 (if not found a default value is returned)
+log.Println(metaStore.Get("user", "1", "verified", ""))
+log.Println(metaStore.Get("user", "1", "verified_at", ""))
 ```
 
 ## Changelog
