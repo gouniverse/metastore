@@ -4,14 +4,14 @@ import (
 	"os"
 	"testing"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"database/sql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-func InitDB(filepath string) *gorm.DB {
+func InitDB(filepath string) *sql.DB {
 	os.Remove(filepath) // remove database
 	dsn := filepath + "?parseTime=true"
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -20,16 +20,16 @@ func InitDB(filepath string) *gorm.DB {
 }
 
 func InitStore() *Store {
-	db := InitDB("test_log_store_automigrate.db")
+	db := InitDB("test_metastore_automigrate.db")
 	return &Store{
-		metaTableName:      "test_log_store_automigrate.db",
+		metaTableName:      "test_metastore_automigrate.db",
 		db:                 db,
 		automigrateEnabled: false,
 	}
 }
 
 func TestWithAutoMigrate(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
+	db := InitDB("test_metastore_automigrate.db")
 
 	s := Store{
 		metaTableName:      "log_with_automigrate_false",
@@ -58,22 +58,7 @@ func TestWithAutoMigrate(t *testing.T) {
 	}
 }
 
-func TestWithDriverAndDNS(t *testing.T) {
-	s := Store{
-		metaTableName:      "log_with_automigrate_true",
-		db:                 nil,
-		automigrateEnabled: true,
-	}
-
-	f := WithDriverAndDNS("test.driverName", "test.dsn")
-	f(&s)
-
-	if s.db == nil {
-		t.Fatalf("DB: Expected Initialized DB, received [%v]", s.db)
-	}
-}
-
-func TestWithGormDb(t *testing.T) {
+func TestWithDb(t *testing.T) {
 	s := Store{
 		metaTableName:      "log_with_automigrate_true",
 		db:                 nil,
@@ -81,7 +66,7 @@ func TestWithGormDb(t *testing.T) {
 	}
 
 	db := InitDB("test")
-	f := WithGormDb(db)
+	f := WithDb(db)
 	f(&s)
 
 	if s.db == nil {
@@ -111,9 +96,9 @@ func TestWithTableName(t *testing.T) {
 }
 
 func Test_Store_AutoMigrate(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
+	db := InitDB("test_metastore_automigrate.db")
 
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	s.AutoMigrate()
 
@@ -129,14 +114,14 @@ func Test_Store_AutoMigrate(t *testing.T) {
 }
 
 func Test_Store_Set(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	db := InitDB("test_metastore_automigrate.db")
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	objType := "Test_Obj"
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val)
+	ok := s.Set(objType, objID, key, val, 0)
 
 	if !ok {
 		t.Fatalf("Failure: Set")
@@ -144,8 +129,8 @@ func Test_Store_Set(t *testing.T) {
 }
 
 func Test_Store_SetJSON(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	db := InitDB("test_metastore_automigrate.db")
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	objType := "Test_Obj"
 	objID := "12345"
@@ -159,14 +144,14 @@ func Test_Store_SetJSON(t *testing.T) {
 }
 
 func Test_Store_Remove(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	db := InitDB("test_metastore_automigrate.db")
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	objType := "Test_Obj"
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val)
+	ok := s.Set(objType, objID, key, val, 0)
 
 	if !ok {
 		t.Fatalf("Failure: Set")
@@ -180,14 +165,14 @@ func Test_Store_Remove(t *testing.T) {
 }
 
 func Test_Store_Get(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	db := InitDB("test_metastore_automigrate.db")
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	objType := "Test_Obj"
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val)
+	ok := s.Set(objType, objID, key, val, 0)
 
 	if !ok {
 		t.Fatalf("Failure: Set")
@@ -200,14 +185,14 @@ func Test_Store_Get(t *testing.T) {
 }
 
 func Test_Store_FindByKey(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	db := InitDB("test_metastore_automigrate.db")
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	objType := "Test_Obj"
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val)
+	ok := s.Set(objType, objID, key, val, 0)
 
 	if !ok {
 		t.Fatalf("Failure: Set")
@@ -218,8 +203,8 @@ func Test_Store_FindByKey(t *testing.T) {
 	}
 }
 func Test_Store_GetJSON(t *testing.T) {
-	db := InitDB("test_log_store_automigrate.db")
-	s := NewStore(WithGormDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	db := InitDB("test_metastore_automigrate.db")
+	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
 
 	objType := "Test_Obj"
 	objID := "12345"
