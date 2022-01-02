@@ -2,9 +2,6 @@ package metastore
 
 import (
 	"time"
-
-	"github.com/gouniverse/uid"
-	"gorm.io/gorm"
 )
 
 const ()
@@ -19,11 +16,4 @@ type Meta struct {
 	CreatedAt  time.Time  `db:"CreatedAt"`
 	UpdatedAt  time.Time  `db:"UpdatedAt"`
 	DeletedAt  *time.Time `db:"DeletedAt"`
-}
-
-// BeforeCreate adds UID to model
-func (m *Meta) BeforeCreate(tx *gorm.DB) (err error) {
-	uuid := uid.HumanUid()
-	m.ID = uuid
-	return nil
 }
