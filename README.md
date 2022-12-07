@@ -55,6 +55,8 @@ log.Println(metaStore.Get("user", "1", "verified_at", ""))
 
 2022.12.07 - Updated dependencies, fixed package name
 
+2022.01.02 - Removed GORM dependency
+
 2021.12.29 - Added tests badge
 
 2021.12.29 - Added tests
