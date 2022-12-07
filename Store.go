@@ -3,6 +3,7 @@ package metastore
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"reflect"
 	"strings"
@@ -24,75 +25,84 @@ type Store struct {
 	metaTableName      string
 	db                 *sql.DB
 	dbDriverName       string
-	debug              bool
+	debugEnabled       bool
 	automigrateEnabled bool
+}
+
+type NewStoreOptions struct {
+	MetaTableName      string
+	DB                 *sql.DB
+	DbDriverName       string
+	AutomigrateEnabled bool
+	DebugEnabled       bool
 }
 
 // StoreOption options for the cache store
 type StoreOption func(*Store)
 
-// WithAutoMigrate sets the table name for the cache store
-func WithAutoMigrate(automigrateEnabled bool) StoreOption {
-	return func(s *Store) {
-		s.automigrateEnabled = automigrateEnabled
-	}
-}
+// // WithAutoMigrate sets the table name for the cache store
+// func WithAutoMigrate(automigrateEnabled bool) StoreOption {
+// 	return func(s *Store) {
+// 		s.automigrateEnabled = automigrateEnabled
+// 	}
+// }
 
-// WithGormDb sets the GORM database for the cache store
-func WithDb(db *sql.DB) StoreOption {
-	return func(s *Store) {
-		s.db = db
-		s.dbDriverName = s.DriverName(s.db)
-	}
-}
+// // WithGormDb sets the GORM database for the cache store
+// func WithDb(db *sql.DB) StoreOption {
+// 	return func(s *Store) {
+// 		s.db = db
+// 		s.dbDriverName = s.DriverName(s.db)
+// 	}
+// }
 
-// WithTableName sets the table name for the cache store
-func WithTableName(metaTableName string) StoreOption {
-	return func(s *Store) {
-		s.metaTableName = metaTableName
-	}
-}
+// // WithTableName sets the table name for the cache store
+// func WithTableName(metaTableName string) StoreOption {
+// 	return func(s *Store) {
+// 		s.metaTableName = metaTableName
+// 	}
+// }
 
 // NewStore creates a new entity store
-func NewStore(opts ...StoreOption) *Store {
-	store := &Store{}
-	for _, opt := range opts {
-		opt(store)
-	}
-
-	if store.db == nil {
-		log.Panic("log store: db is required")
-		return nil
-	}
-
-	if store.dbDriverName == "" {
-		log.Panic("log store: dbDriverName is required")
-		return nil
+func NewStore(opts NewStoreOptions) (*Store, error) {
+	store := &Store{
+		metaTableName:      opts.MetaTableName,
+		automigrateEnabled: opts.AutomigrateEnabled,
+		db:                 opts.DB,
+		dbDriverName:       opts.DbDriverName,
+		debugEnabled:       opts.DebugEnabled,
 	}
 
 	if store.metaTableName == "" {
-		log.Panic("Meta store: metaTableName is required")
+		return nil, errors.New("meta store: metaTableName is required")
+	}
+
+	if store.db == nil {
+		return nil, errors.New("meta store: DB is required")
+	}
+
+	if store.dbDriverName == "" {
+		store.dbDriverName = store.DriverName(store.db)
 	}
 
 	if store.automigrateEnabled {
 		store.AutoMigrate()
 	}
 
-	return store
+	return store, nil
 }
 
 // AutoMigrate auto migrate
 func (st *Store) AutoMigrate() {
 	sql := st.SqlCreateTable()
 
-	if st.debug {
+	if st.debugEnabled {
 		log.Println(sql)
 	}
 
 	_, err := st.db.Exec(sql)
 
 	if err != nil {
-		if st.debug {
+		if st.debugEnabled {
 			log.Println(err)
 		}
 	}
@@ -119,14 +129,14 @@ func (st *Store) DriverName(db *sql.DB) string {
 
 // EnableDebug - enables the debug option
 func (st *Store) EnableDebug(debug bool) {
-	st.debug = debug
+	st.debugEnabled = debug
 }
 
 // FindByKey finds a cache by key
 func (st *Store) FindByKey(objectType string, objectID string, key string) (*Meta, error) {
 	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).From(st.metaTableName).Where(goqu.C("ObjectType").Eq(objectType), goqu.C("ObjectID").Eq(objectID), goqu.C("Key").Eq(key)).Limit(1).ToSQL()
 
-	if st.debug {
+	if st.debugEnabled {
 		log.Println(sqlStr)
 	}
 
@@ -190,7 +200,7 @@ func (st *Store) GetJSON(objectType string, objectID string, key string, valueDe
 func (st *Store) Remove(objectType string, objectID string, key string) error {
 	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).From(st.metaTableName).Where(goqu.C("objecttype").Eq(objectType), goqu.C("objectid").Eq(objectID), goqu.C("key").Eq(key)).Delete().ToSQL()
 
-	if st.debug {
+	if st.debugEnabled {
 		log.Println(sqlStr)
 	}
 
@@ -238,7 +248,7 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).Insert(st.metaTableName).Rows(meta).ToSQL()
 	log.Println(sqlStr)
 
-	if st.debug {
+	if st.debugEnabled {
 		log.Println(sqlStr)
 	}
 

@@ -31,8 +31,17 @@ The following schema is used for the database.
 
 ## Setup
 
-```
-metaStore = metastore.NewStore(metastore.WithGormDb(databaseInstance), metastore.WithTableName("my_meta"))
+```go
+metaStore, err := metastore.NewStore(metastore.NewStoreOptions{
+		DB:                 databaseInstance,
+		MetaTableName:      "my_meta",
+		AutomigrateEnabled: true,
+        DebugEnabled:       false,
+})
+
+if err != nil {
+    t.Fatal("Error at AutoMigrate", err.Error())
+}
 ```
 
 
@@ -40,18 +49,20 @@ metaStore = metastore.NewStore(metastore.WithGormDb(databaseInstance), metastore
 ## Usage
 
 - Set a meta values (for user with ID 1)
-```
+```go
 metaStore.Set("user", "1", "verified", "yes")
 metaStore.Set("user", "1", "verified_at", "2021-03-12")
 ```
 
 - Get meta values (for user with ID 1), if not found a default value is returned
-```
+```go
 log.Println(metaStore.Get("user", "1", "verified", ""))
 log.Println(metaStore.Get("user", "1", "verified_at", ""))
 ```
 
 ## Changelog
+
+2022.12.07 - Changed setup to use struct
 
 2022.12.07 - Updated dependencies, fixed package name
 

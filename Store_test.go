@@ -29,77 +29,85 @@ func InitStore() *Store {
 	}
 }
 
-func TestWithAutoMigrate(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+// func TestWithAutoMigrate(t *testing.T) {
+// 	db := InitDB("test_metastore_automigrate.db")
 
-	s := Store{
-		metaTableName:      "log_with_automigrate_false",
-		db:                 db,
-		automigrateEnabled: false,
-	}
+// 	s := Store{
+// 		metaTableName:      "log_with_automigrate_false",
+// 		db:                 db,
+// 		automigrateEnabled: false,
+// 	}
 
-	f := WithAutoMigrate(true)
-	f(&s)
+// 	f := WithAutoMigrate(true)
+// 	f(&s)
 
-	if s.automigrateEnabled != true {
-		t.Fatalf("automigrateEnabled: Expected [true] received [%v]", s.automigrateEnabled)
-	}
+// 	if s.automigrateEnabled != true {
+// 		t.Fatalf("automigrateEnabled: Expected [true] received [%v]", s.automigrateEnabled)
+// 	}
 
-	s = Store{
-		metaTableName:      "log_with_automigrate_true",
-		db:                 db,
-		automigrateEnabled: true,
-	}
+// 	s = Store{
+// 		metaTableName:      "log_with_automigrate_true",
+// 		db:                 db,
+// 		automigrateEnabled: true,
+// 	}
 
-	f = WithAutoMigrate(false)
-	f(&s)
+// 	f = WithAutoMigrate(false)
+// 	f(&s)
 
-	if s.automigrateEnabled == true {
-		t.Fatalf("automigrateEnabled: Expected [true] received [%v]", s.automigrateEnabled)
-	}
-}
+// 	if s.automigrateEnabled == true {
+// 		t.Fatalf("automigrateEnabled: Expected [true] received [%v]", s.automigrateEnabled)
+// 	}
+// }
 
-func TestWithDb(t *testing.T) {
-	s := Store{
-		metaTableName:      "log_with_automigrate_true",
-		db:                 nil,
-		automigrateEnabled: true,
-	}
+// func TestWithDb(t *testing.T) {
+// 	s := Store{
+// 		metaTableName:      "log_with_automigrate_true",
+// 		db:                 nil,
+// 		automigrateEnabled: true,
+// 	}
 
-	db := InitDB("test")
-	f := WithDb(db)
-	f(&s)
+// 	db := InitDB("test")
+// 	f := WithDb(db)
+// 	f(&s)
 
-	if s.db == nil {
-		t.Fatalf("DB: Expected Initialized DB, received [%v]", s.db)
-	}
+// 	if s.db == nil {
+// 		t.Fatalf("DB: Expected Initialized DB, received [%v]", s.db)
+// 	}
 
-}
+// }
 
-func TestWithTableName(t *testing.T) {
-	s := Store{
-		metaTableName:      "",
-		db:                 nil,
-		automigrateEnabled: false,
-	}
-	table_name := "Table1"
-	f := WithTableName(table_name)
-	f(&s)
-	if s.metaTableName != table_name {
-		t.Fatalf("Expected logTableName [%v], received [%v]", table_name, s.metaTableName)
-	}
-	table_name = "Table2"
-	f = WithTableName(table_name)
-	f(&s)
-	if s.metaTableName != table_name {
-		t.Fatalf("Expected logTableName [%v], received [%v]", table_name, s.metaTableName)
-	}
-}
+// func TestWithTableName(t *testing.T) {
+// 	s := Store{
+// 		metaTableName:      "",
+// 		db:                 nil,
+// 		automigrateEnabled: false,
+// 	}
+// 	table_name := "Table1"
+// 	f := WithTableName(table_name)
+// 	f(&s)
+// 	if s.metaTableName != table_name {
+// 		t.Fatalf("Expected logTableName [%v], received [%v]", table_name, s.metaTableName)
+// 	}
+// 	table_name = "Table2"
+// 	f = WithTableName(table_name)
+// 	f(&s)
+// 	if s.metaTableName != table_name {
+// 		t.Fatalf("Expected logTableName [%v], received [%v]", table_name, s.metaTableName)
+// 	}
+// }
 
 func Test_Store_AutoMigrate(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
 
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	s.AutoMigrate()
 
@@ -116,7 +124,15 @@ func Test_Store_AutoMigrate(t *testing.T) {
 
 func Test_Store_Set(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	objType := "Test_Obj"
 	objID := "12345"
@@ -131,7 +147,15 @@ func Test_Store_Set(t *testing.T) {
 
 func Test_Store_SetJSON(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	objType := "Test_Obj"
 	objID := "12345"
@@ -146,7 +170,15 @@ func Test_Store_SetJSON(t *testing.T) {
 
 func Test_Store_Remove(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	objType := "Test_Obj"
 	objID := "12345"
@@ -177,7 +209,15 @@ func Test_Store_Remove(t *testing.T) {
 
 func Test_Store_Get(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	objType := "Test_Obj"
 	objID := "12345"
@@ -202,7 +242,15 @@ func Test_Store_Get(t *testing.T) {
 
 func Test_Store_FindByKey(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	objType := "Test_Obj"
 	objID := "12345"
@@ -226,7 +274,15 @@ func Test_Store_FindByKey(t *testing.T) {
 }
 func Test_Store_GetJSON(t *testing.T) {
 	db := InitDB("test_metastore_automigrate.db")
-	s := NewStore(WithDb(db), WithTableName("log_with_automigrate"), WithAutoMigrate(true))
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "log_with_automigrate",
+		AutomigrateEnabled: true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
 
 	objType := "Test_Obj"
 	objID := "12345"
