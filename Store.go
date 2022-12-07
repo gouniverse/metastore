@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"database/sql"
+
 	"github.com/doug-martin/goqu/v9"
 	_ "github.com/doug-martin/goqu/v9/dialect/mysql"
 	_ "github.com/doug-martin/goqu/v9/dialect/postgres"
@@ -73,7 +74,7 @@ func NewStore(opts ...StoreOption) *Store {
 		log.Panic("Meta store: metaTableName is required")
 	}
 
-	if store.automigrateEnabled == true {
+	if store.automigrateEnabled {
 		store.AutoMigrate()
 	}
 
@@ -91,11 +92,10 @@ func (st *Store) AutoMigrate() {
 	_, err := st.db.Exec(sql)
 
 	if err != nil {
-		log.Println(err)
-		return
+		if st.debug {
+			log.Println(err)
+		}
 	}
-
-	return
 }
 
 // DriverName finds the driver name from database
@@ -122,64 +122,8 @@ func (st *Store) EnableDebug(debug bool) {
 	st.debug = debug
 }
 
-// SqlCreateTable returns a SQL string for creating the setting table
-func (st *Store) SqlCreateTable() string {
-	sqlMysql := `
-	CREATE TABLE IF NOT EXISTS ` + st.metaTableName + ` (
-	  ID varchar(40) NOT NULL PRIMARY KEY,
-	  ObjectType longtext NOT NULL,
-	  ObjectID longtext NOT NULL,
-	  Key longtext NOT NULL,
-	  Value longtext NOT NULL,
-	  CreatedAt datetime NOT NULL,
-	  UpdatedAt datetime,
-	  DeletedAt datetime
-	);
-	`
-
-	sqlPostgres := `
-	CREATE TABLE IF NOT EXISTS "` + st.metaTableName + `" (
-	  "ID" varchar(40) NOT NULL PRIMARY KEY,
-	  "ObjectType" longtext NOT NULL,
-	  "ObjectID" longtext NOT NULL,
-	  "Key" longtext NOT NULL,
-	  "Value" longtext NOT NULL,
-	  "CreatedAt" timestamptz(6) NOT NULL,
-	  "UpdatedAt" datetime,
-	  "DeletedAt" timestamptz(6) 
-	)
-	`
-
-	sqlSqlite := `
-	CREATE TABLE IF NOT EXISTS "` + st.metaTableName + `" (
-	  "ID" varchar(40) NOT NULL PRIMARY KEY,
-	  "ObjectType" longtext NOT NULL,
-	  "ObjectID" longtext NOT NULL,
-	  "Key" longtext NOT NULL,
-	  "Value" longtext NOT NULL,
-	  "CreatedAt" datetime NOT NULL,
-	  "UpdatedAt" datetime,
-	  "DeletedAt" datetime 
-	)
-	`
-
-	sql := "unsupported driver '" + st.dbDriverName + "'"
-
-	if st.dbDriverName == "mysql" {
-		sql = sqlMysql
-	}
-	if st.dbDriverName == "postgres" {
-		sql = sqlPostgres
-	}
-	if st.dbDriverName == "sqlite" {
-		sql = sqlSqlite
-	}
-
-	return sql
-}
-
 // FindByKey finds a cache by key
-func (st *Store) FindByKey(objectType string, objectID string, key string) *Meta {
+func (st *Store) FindByKey(objectType string, objectID string, key string) (*Meta, error) {
 	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).From(st.metaTableName).Where(goqu.C("ObjectType").Eq(objectType), goqu.C("ObjectID").Eq(objectID), goqu.C("Key").Eq(key)).Limit(1).ToSQL()
 
 	if st.debug {
@@ -190,46 +134,60 @@ func (st *Store) FindByKey(objectType string, objectID string, key string) *Meta
 	err := sqlscan.Get(context.Background(), st.db, &meta, sqlStr)
 
 	if err != nil {
-		if err.Error() == sql.ErrNoRows.Error() {
-			return nil
+		if err == sql.ErrNoRows {
+			// Looks like this is now outdated for sqlscan
+			return nil, nil // not really an error, no such row
 		}
-		log.Fatal("Failed to execute query: ", err)
-		return nil
+
+		if sqlscan.NotFound(err) {
+			return nil, nil // not really an error, no such row
+		}
+
+		return nil, err
 	}
-	return &meta
+
+	return &meta, nil
 }
 
 // Get gets a key from cache
-func (st *Store) Get(objectType string, objectID string, key string, valueDefault string) string {
-	cache := st.FindByKey(objectType, objectID, key)
+func (st *Store) Get(objectType string, objectID string, key string, valueDefault string) (string, error) {
+	meta, err := st.FindByKey(objectType, objectID, key)
 
-	if cache != nil {
-		return cache.Value
+	if err != nil {
+		return "", err
 	}
 
-	return valueDefault
+	if meta != nil {
+		return meta.Value, nil
+	}
+
+	return valueDefault, nil
 }
 
 // GetJSON gets a JSON key from cache
-func (st *Store) GetJSON(objectType string, objectID string, key string, valueDefault interface{}) interface{} {
-	meta := st.FindByKey(objectType, objectID, key)
+func (st *Store) GetJSON(objectType string, objectID string, key string, valueDefault interface{}) (interface{}, error) {
+	meta, err := st.FindByKey(objectType, objectID, key)
+
+	if err != nil {
+		return nil, err
+	}
 
 	if meta != nil {
 		jsonValue := meta.Value
-		var e interface{}
-		jsonError := json.Unmarshal([]byte(jsonValue), &e)
+		var intrfc interface{}
+		jsonError := json.Unmarshal([]byte(jsonValue), &intrfc)
 		if jsonError != nil {
-			return valueDefault
+			return valueDefault, jsonError
 		}
 
-		return e
+		return intrfc, nil
 	}
 
-	return valueDefault
+	return valueDefault, nil
 }
 
 // Remove deletes a meta key
-func (st *Store) Remove(objectType string, objectID string, key string) (bool, error) {
+func (st *Store) Remove(objectType string, objectID string, key string) error {
 	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).From(st.metaTableName).Where(goqu.C("objecttype").Eq(objectType), goqu.C("objectid").Eq(objectID), goqu.C("key").Eq(key)).Delete().ToSQL()
 
 	if st.debug {
@@ -239,17 +197,27 @@ func (st *Store) Remove(objectType string, objectID string, key string) (bool, e
 	_, err := st.db.Exec(sqlStr)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, err
+			// Looks like this is now outdated for sqlscan
+			return nil // not really an error, already not there
 		}
 
-		return false, err
+		if sqlscan.NotFound(err) {
+			return nil
+		}
+
+		return err
 	}
-	return true, nil
+
+	return nil
 }
 
 // Set sets new key value pair
-func (st *Store) Set(objectType string, objectID string, key string, value string, seconds int64) bool {
-	meta := st.FindByKey(objectType, objectID, key)
+func (st *Store) Set(objectType string, objectID string, key string, value string, seconds int64) error {
+	meta, err := st.FindByKey(objectType, objectID, key)
+
+	if err != nil {
+		return err
+	}
 
 	expiresAt := time.Now().Add(time.Second * time.Duration(seconds))
 
@@ -274,20 +242,21 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 		log.Println(sqlStr)
 	}
 
-	_, err := st.db.Exec(sqlStr)
+	_, err = st.db.Exec(sqlStr)
 
 	if err != nil {
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // SetJSON sets new key value pair
-func (st *Store) SetJSON(objectType string, objectID string, key string, value interface{}, seconds int64) bool {
+func (st *Store) SetJSON(objectType string, objectID string, key string, value interface{}, seconds int64) error {
 	jsonValue, jsonError := json.Marshal(value)
+
 	if jsonError != nil {
-		return false
+		return jsonError
 	}
 
 	return st.Set(objectType, objectID, key, string(jsonValue), seconds)

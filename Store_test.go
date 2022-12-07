@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"database/sql"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -121,10 +122,10 @@ func Test_Store_Set(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val, 0)
 
-	if !ok {
-		t.Fatalf("Failure: Set")
+	if errSet != nil {
+		t.Fatal("Failure: Set", errSet.Error())
 	}
 }
 
@@ -136,10 +137,10 @@ func Test_Store_SetJSON(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := `{"a" : "b", "c" : "d"}`
-	ok := s.SetJSON(objType, objID, key, val, 0)
+	errSetJSON := s.SetJSON(objType, objID, key, val, 0)
 
-	if !ok {
-		t.Fatalf("Failure: Set")
+	if errSetJSON != nil {
+		t.Fatal("Failure: SetJSON", errSetJSON.Error())
 	}
 }
 
@@ -151,16 +152,26 @@ func Test_Store_Remove(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val, 0)
 
-	if !ok {
-		t.Fatalf("Failure: Set")
+	if errSet != nil {
+		t.Fatal("Failure at Remove: Set", errSet.Error())
 	}
 
-	s.Remove(objType, objID, key)
-	ret := s.Get(objType, objID, key, "default")
+	errRemove := s.Remove(objType, objID, key)
+
+	if errRemove != nil {
+		t.Fatal("Failure at Remove: Remove", errRemove.Error())
+	}
+
+	ret, errGet := s.Get(objType, objID, key, "default")
+
+	if errGet != nil {
+		t.Fatal("Failure at Remove: Get", errGet.Error())
+	}
+
 	if ret != "default" {
-		t.Fatalf("Unable to delete!!! Entry Persists")
+		t.Fatal("Unable to delete!!! Entry Persists")
 	}
 }
 
@@ -172,13 +183,18 @@ func Test_Store_Get(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val, 0)
 
-	if !ok {
-		t.Fatalf("Failure: Set")
+	if errSet != nil {
+		t.Fatal("Failure at Get: Set", errSet.Error())
 	}
 
-	ret := s.Get(objType, objID, key, "default")
+	ret, errGet := s.Get(objType, objID, key, "default")
+
+	if errGet != nil {
+		t.Fatal("Failure at Get: Get", errGet.Error())
+	}
+
 	if ret != val {
 		t.Fatalf("Unable to Get: Expected [%v] Received [%v]", val, ret)
 	}
@@ -192,12 +208,18 @@ func Test_Store_FindByKey(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	ok := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val, 0)
 
-	if !ok {
-		t.Fatalf("Failure: Set")
+	if errSet != nil {
+		t.Fatal("Failure at FindByKey: Set", errSet.Error())
 	}
-	meta := s.FindByKey(objType, objID, key)
+
+	meta, errFindByKey := s.FindByKey(objType, objID, key)
+
+	if errFindByKey != nil {
+		t.Fatal("Failure at FindByKey: FindbyKey", errFindByKey)
+	}
+
 	if meta.ObjectID != objID {
 		t.Fatalf("Incorrect Record Received [%v]", meta)
 	}
@@ -210,12 +232,17 @@ func Test_Store_GetJSON(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := `{"a" : "b", "c" : "d"}`
-	ok := s.SetJSON(objType, objID, key, val, 10)
+	errSetJSON := s.SetJSON(objType, objID, key, val, 10)
 
-	if !ok {
-		t.Fatalf("Failure: Set")
+	if errSetJSON != nil {
+		t.Fatal("Failure as GetJSON: SetJSON", errSetJSON)
 	}
-	ret := s.GetJSON(objType, objID, key, nil)
+	ret, errGetJSON := s.GetJSON(objType, objID, key, nil)
+
+	if errGetJSON != nil {
+		t.Fatal("Failure at GetJSON: GetJSON", errGetJSON.Error())
+	}
+
 	if ret == nil {
 		t.Fatalf("Failure getting JSON value")
 	}
