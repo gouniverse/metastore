@@ -53,6 +53,8 @@ log.Println(metaStore.Get("user", "1", "verified_at", ""))
 
 ## Changelog
 
+2022.12.07 - Updated dependencies, fixed package name
+
 2021.12.29 - Added tests badge
 
 2021.12.29 - Added tests
