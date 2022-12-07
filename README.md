@@ -33,10 +33,10 @@ The following schema is used for the database.
 
 ```go
 metaStore, err := metastore.NewStore(metastore.NewStoreOptions{
-		DB:                 databaseInstance,
-		MetaTableName:      "my_meta",
-		AutomigrateEnabled: true,
-        DebugEnabled:       false,
+	DB:                 databaseInstance,
+	MetaTableName:      "my_meta",
+	AutomigrateEnabled: true,
+	DebugEnabled:       false,
 })
 
 if err != nil {
