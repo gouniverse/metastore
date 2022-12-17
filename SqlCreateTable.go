@@ -4,40 +4,40 @@ package metastore
 func (st *Store) SqlCreateTable() string {
 	sqlMysql := `
 	CREATE TABLE IF NOT EXISTS ` + st.metaTableName + ` (
-	  id varchar(40) NOT NULL PRIMARY KEY,
-	  object_type longtext NOT NULL,
-	  object_id longtext NOT NULL,
-	  key longtext NOT NULL,
-	  value longtext NOT NULL,
-	  created_at datetime NOT NULL,
-	  updated_at datetime,
-	  deleted_at datetime
+	  id 			varchar(40)		NOT NULL PRIMARY KEY,
+	  object_type	varchar(100) 	NOT NULL,
+	  object_id		varchar(40) 	NOT NULL,
+	  meta_key  	varchar(255)	NOT NULL,
+	  meta_value 	longtext,
+	  created_at 	datetime		NOT NULL,
+	  updated_at 	datetime		NOT NULL,
+	  deleted_at 	datetime
 	);
 	`
 
 	sqlPostgres := `
 	CREATE TABLE IF NOT EXISTS "` + st.metaTableName + `" (
-	  "ID" varchar(40) NOT NULL PRIMARY KEY,
-	  "ObjectType" longtext NOT NULL,
-	  "ObjectID" longtext NOT NULL,
-	  "Key" longtext NOT NULL,
-	  "Value" longtext NOT NULL,
-	  "CreatedAt" timestamptz(6) NOT NULL,
-	  "UpdatedAt" datetime,
-	  "DeletedAt" timestamptz(6) 
+	  "id"			varchar(40)		NOT NULL PRIMARY KEY,
+	  "object_type"	varchar(100) 	NOT NULL,
+	  "object_id"	varchar(40) 	NOT NULL,
+	  "meta_key"  	varchar(255)	NOT NULL,
+	  "meta_value" 	longtext,
+	  "created_at"	timestamptz(6)	NOT NULL,
+	  "updated_at"	timestamptz(6)	NOT NULL,
+	  "deleted_at"	timestamptz(6) 
 	)
 	`
 
 	sqlSqlite := `
 	CREATE TABLE IF NOT EXISTS "` + st.metaTableName + `" (
-	  "ID" varchar(40) NOT NULL PRIMARY KEY,
-	  "ObjectType" longtext NOT NULL,
-	  "ObjectID" longtext NOT NULL,
-	  "Key" longtext NOT NULL,
-	  "Value" longtext NOT NULL,
-	  "CreatedAt" datetime NOT NULL,
-	  "UpdatedAt" datetime,
-	  "DeletedAt" datetime 
+	  "id"			varchar(40)		NOT NULL PRIMARY KEY,
+	  "object_type"	varchar(100) 	NOT NULL,
+	  "object_id"	varchar(40) 	NOT NULL,
+	  "meta_key"  	varchar(255)	NOT NULL,
+	  "meta_value" 	longtext,
+	  "created_at"	datetime		NOT NULL,
+	  "updated_at"	datetime		NOT NULL,
+	  "deleted_at"	datetime 
 	)
 	`
 

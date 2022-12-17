@@ -22,7 +22,7 @@ The following schema is used for the database.
 |-------------|------------------|
 | id          | String, UniqueId |
 | object_type | String (100)     |
-| object_id   | String (40)     |
+| object_id   | String (40)      |
 | meta_key    | String (255)     |
 | meta_value  | Long Text        |
 | created_at  | DateTime         |

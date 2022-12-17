@@ -134,7 +134,11 @@ func (st *Store) EnableDebug(debug bool) {
 
 // FindByKey finds a cache by key
 func (st *Store) FindByKey(objectType string, objectID string, key string) (*Meta, error) {
-	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).From(st.metaTableName).Where(goqu.C("ObjectType").Eq(objectType), goqu.C("ObjectID").Eq(objectID), goqu.C("Key").Eq(key)).Limit(1).ToSQL()
+	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
+		From(st.metaTableName).
+		Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+		Limit(1).
+		ToSQL()
 
 	if st.debugEnabled {
 		log.Println(sqlStr)
@@ -198,7 +202,10 @@ func (st *Store) GetJSON(objectType string, objectID string, key string, valueDe
 
 // Remove deletes a meta key
 func (st *Store) Remove(objectType string, objectID string, key string) error {
-	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).From(st.metaTableName).Where(goqu.C("objecttype").Eq(objectType), goqu.C("objectid").Eq(objectID), goqu.C("key").Eq(key)).Delete().ToSQL()
+	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
+		From(st.metaTableName).Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+		Delete().
+		ToSQL()
 
 	if st.debugEnabled {
 		log.Println(sqlStr)
@@ -245,8 +252,10 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 		meta.UpdatedAt = time.Now()
 	}
 
-	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).Insert(st.metaTableName).Rows(meta).ToSQL()
-	log.Println(sqlStr)
+	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
+		Insert(st.metaTableName).
+		Rows(meta).
+		ToSQL()
 
 	if st.debugEnabled {
 		log.Println(sqlStr)

@@ -128,6 +128,7 @@ func Test_Store_Set(t *testing.T) {
 		DB:                 db,
 		MetaTableName:      "log_with_automigrate",
 		AutomigrateEnabled: true,
+		DebugEnabled:       true,
 	})
 
 	if err != nil {
@@ -208,35 +209,36 @@ func Test_Store_Remove(t *testing.T) {
 }
 
 func Test_Store_Get(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+	db := InitDB("test_metastore_get.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "meta_with_automigrate",
 		AutomigrateEnabled: true,
+		DebugEnabled:       true,
 	})
 
 	if err != nil {
-		t.Fatal("Error at AutoMigrate", err.Error())
+		t.Fatal("Error at Test_Store_Get:", err.Error())
 	}
 
-	objType := "Test_Obj"
-	objID := "12345"
-	key := "1234z"
-	val := "123zx"
+	objType := "OBJECT_TYPE"
+	objID := "OBJECT_ID"
+	key := "OBJECT_KEY"
+	val := "OBJECT_VALUE"
 	errSet := s.Set(objType, objID, key, val, 0)
 
 	if errSet != nil {
-		t.Fatal("Failure at Get: Set", errSet.Error())
+		t.Fatal("Failure at Test_Store_Get: Set", errSet.Error())
 	}
 
 	ret, errGet := s.Get(objType, objID, key, "default")
 
 	if errGet != nil {
-		t.Fatal("Failure at Get: Get", errGet.Error())
+		t.Fatal("Failure at Test_Store_Get:", errGet.Error())
 	}
 
 	if ret != val {
-		t.Fatalf("Unable to Get: Expected [%v] Received [%v]", val, ret)
+		t.Fatalf("Unable to Test_Store_Get: Expected [%v] Received [%v]", val, ret)
 	}
 }
 
