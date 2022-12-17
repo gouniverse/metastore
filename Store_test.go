@@ -139,7 +139,7 @@ func Test_Store_Set(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	errSet := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val)
 
 	if errSet != nil {
 		t.Fatal("Failure: Set", errSet.Error())
@@ -162,7 +162,7 @@ func Test_Store_SetJSON(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := `{"a" : "b", "c" : "d"}`
-	errSetJSON := s.SetJSON(objType, objID, key, val, 0)
+	errSetJSON := s.SetJSON(objType, objID, key, val)
 
 	if errSetJSON != nil {
 		t.Fatal("Failure: SetJSON", errSetJSON.Error())
@@ -185,7 +185,7 @@ func Test_Store_Remove(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	errSet := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val)
 
 	if errSet != nil {
 		t.Fatal("Failure at Remove: Set", errSet.Error())
@@ -225,7 +225,7 @@ func Test_Store_Get(t *testing.T) {
 	objID := "OBJECT_ID"
 	key := "OBJECT_KEY"
 	val := "OBJECT_VALUE"
-	errSet := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val)
 
 	if errSet != nil {
 		t.Fatal("Failure at Test_Store_Get: Set", errSet.Error())
@@ -258,7 +258,7 @@ func Test_Store_FindByKey(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := "123zx"
-	errSet := s.Set(objType, objID, key, val, 0)
+	errSet := s.Set(objType, objID, key, val)
 
 	if errSet != nil {
 		t.Fatal("Failure at FindByKey: Set", errSet.Error())
@@ -290,7 +290,7 @@ func Test_Store_GetJSON(t *testing.T) {
 	objID := "12345"
 	key := "1234z"
 	val := `{"a" : "b", "c" : "d"}`
-	errSetJSON := s.SetJSON(objType, objID, key, val, 10)
+	errSetJSON := s.SetJSON(objType, objID, key, val)
 
 	if errSetJSON != nil {
 		t.Fatal("Failure as GetJSON: SetJSON", errSetJSON)

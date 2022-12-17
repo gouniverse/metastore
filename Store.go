@@ -229,14 +229,12 @@ func (st *Store) Remove(objectType string, objectID string, key string) error {
 }
 
 // Set sets new key value pair
-func (st *Store) Set(objectType string, objectID string, key string, value string, seconds int64) error {
+func (st *Store) Set(objectType string, objectID string, key string, value string) error {
 	meta, err := st.FindByKey(objectType, objectID, key)
 
 	if err != nil {
 		return err
 	}
-
-	expiresAt := time.Now().Add(time.Second * time.Duration(seconds))
 
 	var newMeta = &Meta{ObjectType: objectType, ObjectID: objectID, Key: key, Value: value}
 	if meta == nil {
@@ -244,11 +242,9 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 		meta.Value = value
 		meta.ID = uid.HumanUid()
 		meta.CreatedAt = time.Now()
-		meta.DeletedAt = &expiresAt
 		meta.UpdatedAt = time.Now()
 	} else {
 		meta.Value = value
-		meta.DeletedAt = &expiresAt
 		meta.UpdatedAt = time.Now()
 	}
 
@@ -271,12 +267,12 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 }
 
 // SetJSON sets new key value pair
-func (st *Store) SetJSON(objectType string, objectID string, key string, value interface{}, seconds int64) error {
+func (st *Store) SetJSON(objectType string, objectID string, key string, value interface{}) error {
 	jsonValue, jsonError := json.Marshal(value)
 
 	if jsonError != nil {
 		return jsonError
 	}
 
-	return st.Set(objectType, objectID, key, string(jsonValue), seconds)
+	return st.Set(objectType, objectID, key, string(jsonValue))
 }
