@@ -40,28 +40,6 @@ type NewStoreOptions struct {
 // StoreOption options for the cache store
 type StoreOption func(*Store)
 
-// // WithAutoMigrate sets the table name for the cache store
-// func WithAutoMigrate(automigrateEnabled bool) StoreOption {
-// 	return func(s *Store) {
-// 		s.automigrateEnabled = automigrateEnabled
-// 	}
-// }
-
-// // WithGormDb sets the GORM database for the cache store
-// func WithDb(db *sql.DB) StoreOption {
-// 	return func(s *Store) {
-// 		s.db = db
-// 		s.dbDriverName = s.DriverName(s.db)
-// 	}
-// }
-
-// // WithTableName sets the table name for the cache store
-// func WithTableName(metaTableName string) StoreOption {
-// 	return func(s *Store) {
-// 		s.metaTableName = metaTableName
-// 	}
-// }
-
 // NewStore creates a new entity store
 func NewStore(opts NewStoreOptions) (*Store, error) {
 	store := &Store{
@@ -203,7 +181,8 @@ func (st *Store) GetJSON(objectType string, objectID string, key string, valueDe
 // Remove deletes a meta key
 func (st *Store) Remove(objectType string, objectID string, key string) error {
 	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
-		From(st.metaTableName).Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+		From(st.metaTableName).
+		Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
 		Delete().
 		ToSQL()
 
@@ -236,22 +215,36 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 		return err
 	}
 
-	var newMeta = &Meta{ObjectType: objectType, ObjectID: objectID, Key: key, Value: value}
+	var sqlStr string
+	var sqlErr error
 	if meta == nil {
-		meta = newMeta
-		meta.Value = value
-		meta.ID = uid.HumanUid()
-		meta.CreatedAt = time.Now()
-		meta.UpdatedAt = time.Now()
+		var newMeta = &Meta{
+			ID:         uid.HumanUid(),
+			ObjectType: objectType,
+			ObjectID:   objectID,
+			Key:        key,
+			Value:      value,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		}
+		sqlStr, _, sqlErr = goqu.Dialect(st.dbDriverName).
+			Insert(st.metaTableName).
+			Rows(newMeta).
+			ToSQL()
 	} else {
-		meta.Value = value
-		meta.UpdatedAt = time.Now()
+		fields := map[string]interface{}{}
+		fields["meta_value"] = value
+		fields["updated_at"] = time.Now()
+		sqlStr, _, sqlErr = goqu.Dialect(st.dbDriverName).
+			Update(st.metaTableName).
+			Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+			Set(fields).
+			ToSQL()
 	}
 
-	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
-		Insert(st.metaTableName).
-		Rows(meta).
-		ToSQL()
+	if sqlErr != nil {
+		return sqlErr
+	}
 
 	if st.debugEnabled {
 		log.Println(sqlStr)

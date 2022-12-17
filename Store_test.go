@@ -101,7 +101,7 @@ func Test_Store_AutoMigrate(t *testing.T) {
 
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 	})
 
@@ -111,8 +111,8 @@ func Test_Store_AutoMigrate(t *testing.T) {
 
 	s.AutoMigrate()
 
-	if s.metaTableName != "log_with_automigrate" {
-		t.Fatalf("Expected logTableName [log_with_automigrate] received [%v]", s.metaTableName)
+	if s.metaTableName != "metas" {
+		t.Fatalf("Expected metaTableName [metas] received [%v]", s.metaTableName)
 	}
 	if s.db == nil {
 		t.Fatalf("DB Init Failure")
@@ -123,10 +123,10 @@ func Test_Store_AutoMigrate(t *testing.T) {
 }
 
 func Test_Store_Set(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+	db := InitDB("test_metastore_set.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 		DebugEnabled:       true,
 	})
@@ -147,10 +147,10 @@ func Test_Store_Set(t *testing.T) {
 }
 
 func Test_Store_SetJSON(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+	db := InitDB("test_metastore_set_json.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 	})
 
@@ -170,10 +170,10 @@ func Test_Store_SetJSON(t *testing.T) {
 }
 
 func Test_Store_Remove(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+	db := InitDB("test_metastore_remove.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 	})
 
@@ -212,7 +212,7 @@ func Test_Store_Get(t *testing.T) {
 	db := InitDB("test_metastore_get.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "meta_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 		DebugEnabled:       true,
 	})
@@ -243,10 +243,10 @@ func Test_Store_Get(t *testing.T) {
 }
 
 func Test_Store_FindByKey(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+	db := InitDB("test_metastore_findbykey.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 	})
 
@@ -275,10 +275,10 @@ func Test_Store_FindByKey(t *testing.T) {
 	}
 }
 func Test_Store_GetJSON(t *testing.T) {
-	db := InitDB("test_metastore_automigrate.db")
+	db := InitDB("test_metastore_getjson.db")
 	s, err := NewStore(NewStoreOptions{
 		DB:                 db,
-		MetaTableName:      "log_with_automigrate",
+		MetaTableName:      "metas",
 		AutomigrateEnabled: true,
 	})
 
@@ -303,5 +303,56 @@ func Test_Store_GetJSON(t *testing.T) {
 
 	if ret == nil {
 		t.Fatalf("Failure getting JSON value")
+	}
+}
+
+func Test_Store_Update(t *testing.T) {
+	db := InitDB("test_metastore_update.db")
+	s, err := NewStore(NewStoreOptions{
+		DB:                 db,
+		MetaTableName:      "metas",
+		AutomigrateEnabled: true,
+		DebugEnabled:       true,
+	})
+
+	if err != nil {
+		t.Fatal("Error at AutoMigrate", err.Error())
+	}
+
+	objType := "TESTOBJECT"
+	objID := "OBJECTID"
+	key := "OBJECTKEY"
+	val := "OBJECTVALUE"
+	val2 := "OBJECTVALUE2"
+	errSet := s.Set(objType, objID, key, val)
+
+	if errSet != nil {
+		t.Fatal("Failure Update: Set", errSet.Error())
+	}
+
+	metaVal, errGet := s.Get(objType, objID, key, "")
+
+	if errGet != nil {
+		t.Fatal("Failure UPdate: Get", errSet.Error())
+	}
+
+	if metaVal != val {
+		t.Fatal("Failure Update: Values do not match", metaVal, val)
+	}
+
+	errSet2 := s.Set(objType, objID, key, val2)
+
+	if errSet2 != nil {
+		t.Fatal("Failure Update: Set2", errSet.Error())
+	}
+
+	metaVal2, errGet2 := s.Get(objType, objID, key, "")
+
+	if errGet2 != nil {
+		t.Fatal("Failure UPdate: Get2", errSet.Error())
+	}
+
+	if metaVal2 != val2 {
+		t.Fatal("Failure Update: Values 2 do not match", metaVal2, val2)
 	}
 }
