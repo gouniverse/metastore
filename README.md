@@ -1,4 +1,4 @@
-# Meta Store <a href="https://github.com/gouniverse/metastore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
+# Meta Store <a href="https://gitpod.io/#https://github.com/gouniverse/metastore" style="float:right:"><img src="https://gitpod.io/button/open-in-gitpod.svg" alt="Open in Gitpod" loading="lazy"></a>
 
 
 [![Tests Status](https://github.com/gouniverse/metastore/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/gouniverse/metastore/actions/workflows/test.yml)
