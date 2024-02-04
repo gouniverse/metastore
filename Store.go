@@ -70,8 +70,12 @@ func NewStore(opts NewStoreOptions) (*Store, error) {
 }
 
 // AutoMigrate auto migrate
-func (st *Store) AutoMigrate() {
+func (st *Store) AutoMigrate() error {
 	sql := st.SqlCreateTable()
+
+	if sql == "" {
+		return errors.New("meta table create sql is empty")
+	}
 
 	if st.debugEnabled {
 		log.Println(sql)
@@ -80,10 +84,10 @@ func (st *Store) AutoMigrate() {
 	_, err := st.db.Exec(sql)
 
 	if err != nil {
-		if st.debugEnabled {
-			log.Println(err)
-		}
+		return err
 	}
+
+	return nil
 }
 
 // DriverName finds the driver name from database
