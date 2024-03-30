@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"reflect"
-	"strings"
 	"time"
 
 	"database/sql"
@@ -17,6 +15,7 @@ import (
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
 	_ "github.com/doug-martin/goqu/v9/dialect/sqlserver"
 	"github.com/georgysavva/scany/sqlscan"
+	"github.com/gouniverse/sb"
 	"github.com/gouniverse/uid"
 )
 
@@ -59,7 +58,7 @@ func NewStore(opts NewStoreOptions) (*Store, error) {
 	}
 
 	if store.dbDriverName == "" {
-		store.dbDriverName = store.DriverName(store.db)
+		store.dbDriverName = sb.DatabaseDriverName(store.db)
 	}
 
 	if store.automigrateEnabled {
@@ -90,25 +89,6 @@ func (st *Store) AutoMigrate() error {
 	return nil
 }
 
-// DriverName finds the driver name from database
-func (st *Store) DriverName(db *sql.DB) string {
-	dv := reflect.ValueOf(db.Driver())
-	driverFullName := dv.Type().String()
-	if strings.Contains(driverFullName, "mysql") {
-		return "mysql"
-	}
-	if strings.Contains(driverFullName, "postgres") || strings.Contains(driverFullName, "pq") {
-		return "postgres"
-	}
-	if strings.Contains(driverFullName, "sqlite") {
-		return "sqlite"
-	}
-	if strings.Contains(driverFullName, "mssql") {
-		return "mssql"
-	}
-	return driverFullName
-}
-
 // EnableDebug - enables the debug option
 func (st *Store) EnableDebug(debug bool) {
 	st.debugEnabled = debug
@@ -116,18 +96,23 @@ func (st *Store) EnableDebug(debug bool) {
 
 // FindByKey finds a cache by key
 func (st *Store) FindByKey(objectType string, objectID string, key string) (*Meta, error) {
-	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
+	sqlStr, params, err := goqu.Dialect(st.dbDriverName).
 		From(st.metaTableName).
-		Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+		Prepared(true).
+		Where(goqu.C(COLUMN_OBJECT_TYPE).Eq(objectType), goqu.C(COLUMN_OBJECT_ID).Eq(objectID), goqu.C(COLUMN_META_KEY).Eq(key)).
 		Limit(1).
 		ToSQL()
+
+	if err != nil {
+		return nil, err
+	}
 
 	if st.debugEnabled {
 		log.Println(sqlStr)
 	}
 
 	var meta Meta
-	err := sqlscan.Get(context.Background(), st.db, &meta, sqlStr)
+	err = sqlscan.Get(context.Background(), st.db, &meta, sqlStr, params...)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -184,17 +169,22 @@ func (st *Store) GetJSON(objectType string, objectID string, key string, valueDe
 
 // Remove deletes a meta key
 func (st *Store) Remove(objectType string, objectID string, key string) error {
-	sqlStr, _, _ := goqu.Dialect(st.dbDriverName).
+	sqlStr, params, err := goqu.Dialect(st.dbDriverName).
 		From(st.metaTableName).
-		Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+		Prepared(true).
+		Where(goqu.C(COLUMN_OBJECT_TYPE).Eq(objectType), goqu.C(COLUMN_OBJECT_ID).Eq(objectID), goqu.C(COLUMN_META_KEY).Eq(key)).
 		Delete().
 		ToSQL()
+
+	if err != nil {
+		return err
+	}
 
 	if st.debugEnabled {
 		log.Println(sqlStr)
 	}
 
-	_, err := st.db.Exec(sqlStr)
+	_, err = st.db.Exec(sqlStr, params...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// Looks like this is now outdated for sqlscan
@@ -220,6 +210,7 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 	}
 
 	var sqlStr string
+	var params []interface{}
 	var sqlErr error
 	if meta == nil {
 		var newMeta = &Meta{
@@ -231,17 +222,19 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 			CreatedAt:  time.Now(),
 			UpdatedAt:  time.Now(),
 		}
-		sqlStr, _, sqlErr = goqu.Dialect(st.dbDriverName).
+		sqlStr, params, sqlErr = goqu.Dialect(st.dbDriverName).
 			Insert(st.metaTableName).
+			Prepared(true).
 			Rows(newMeta).
 			ToSQL()
 	} else {
 		fields := map[string]interface{}{}
 		fields["meta_value"] = value
 		fields["updated_at"] = time.Now()
-		sqlStr, _, sqlErr = goqu.Dialect(st.dbDriverName).
+		sqlStr, params, sqlErr = goqu.Dialect(st.dbDriverName).
 			Update(st.metaTableName).
-			Where(goqu.C("object_type").Eq(objectType), goqu.C("object_id").Eq(objectID), goqu.C("meta_key").Eq(key)).
+			Prepared(true).
+			Where(goqu.C(COLUMN_OBJECT_TYPE).Eq(objectType), goqu.C(COLUMN_OBJECT_ID).Eq(objectID), goqu.C(COLUMN_META_KEY).Eq(key)).
 			Set(fields).
 			ToSQL()
 	}
@@ -254,7 +247,7 @@ func (st *Store) Set(objectType string, objectID string, key string, value strin
 		log.Println(sqlStr)
 	}
 
-	_, err = st.db.Exec(sqlStr)
+	_, err = st.db.Exec(sqlStr, params...)
 
 	if err != nil {
 		return err

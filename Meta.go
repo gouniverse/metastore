@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-const ()
-
 // Meta type
 type Meta struct {
 	ID         string     `db:"id"`

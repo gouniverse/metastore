@@ -1,57 +1,49 @@
 package metastore
 
+import "github.com/gouniverse/sb"
+
 // SqlCreateTable returns a SQL string for creating the setting table
 func (st *Store) SqlCreateTable() string {
-	sqlMysql := `
-	CREATE TABLE IF NOT EXISTS ` + st.metaTableName + ` (
-	  id 			varchar(40)		NOT NULL PRIMARY KEY,
-	  object_type	varchar(100) 	NOT NULL,
-	  object_id		varchar(40) 	NOT NULL,
-	  meta_key  	varchar(255)	NOT NULL,
-	  meta_value 	longtext,
-	  created_at 	datetime		NOT NULL,
-	  updated_at 	datetime		NOT NULL,
-	  deleted_at 	datetime
-	);
-	`
-
-	sqlPostgres := `
-	CREATE TABLE IF NOT EXISTS "` + st.metaTableName + `" (
-	  "id"			varchar(40)		NOT NULL PRIMARY KEY,
-	  "object_type"	varchar(100) 	NOT NULL,
-	  "object_id"	varchar(40) 	NOT NULL,
-	  "meta_key"  	varchar(255)	NOT NULL,
-	  "meta_value" 	longtext,
-	  "created_at"	timestamptz(6)	NOT NULL,
-	  "updated_at"	timestamptz(6)	NOT NULL,
-	  "deleted_at"	timestamptz(6) 
-	)
-	`
-
-	sqlSqlite := `
-	CREATE TABLE IF NOT EXISTS "` + st.metaTableName + `" (
-	  "id"			varchar(40)		NOT NULL PRIMARY KEY,
-	  "object_type"	varchar(100) 	NOT NULL,
-	  "object_id"	varchar(40) 	NOT NULL,
-	  "meta_key"  	varchar(255)	NOT NULL,
-	  "meta_value" 	longtext,
-	  "created_at"	datetime		NOT NULL,
-	  "updated_at"	datetime		NOT NULL,
-	  "deleted_at"	datetime 
-	)
-	`
-
-	sql := "unsupported driver '" + st.dbDriverName + "'"
-
-	if st.dbDriverName == "mysql" {
-		sql = sqlMysql
-	}
-	if st.dbDriverName == "postgres" {
-		sql = sqlPostgres
-	}
-	if st.dbDriverName == "sqlite" {
-		sql = sqlSqlite
-	}
+	sql := sb.NewBuilder(sb.DatabaseDriverName(st.db)).
+		Table(st.metaTableName).
+		Column(sb.Column{
+			Name:       COLUMN_ID,
+			Type:       sb.COLUMN_TYPE_STRING,
+			Length:     40,
+			PrimaryKey: true,
+		}).
+		Column(sb.Column{
+			Name:   COLUMN_OBJECT_TYPE,
+			Type:   sb.COLUMN_TYPE_STRING,
+			Length: 100,
+		}).
+		Column(sb.Column{
+			Name:   COLUMN_OBJECT_ID,
+			Type:   sb.COLUMN_TYPE_STRING,
+			Length: 40,
+		}).
+		Column(sb.Column{
+			Name: COLUMN_META_KEY,
+			Type: sb.COLUMN_TYPE_STRING,
+		}).
+		Column(sb.Column{
+			Name: COLUMN_META_VALUE,
+			Type: sb.COLUMN_TYPE_LONGTEXT,
+		}).
+		Column(sb.Column{
+			Name: COLUMN_CREATED_AT,
+			Type: sb.COLUMN_TYPE_DATETIME,
+		}).
+		Column(sb.Column{
+			Name: COLUMN_UPDATED_AT,
+			Type: sb.COLUMN_TYPE_DATETIME,
+		}).
+		Column(sb.Column{
+			Name:     COLUMN_DELETED_AT,
+			Type:     sb.COLUMN_TYPE_DATETIME,
+			Nullable: true,
+		}).
+		CreateIfNotExists()
 
 	return sql
 }
