@@ -40,7 +40,7 @@ type NewStoreOptions struct {
 type StoreOption func(*Store)
 
 // NewStore creates a new entity store
-func NewStore(opts NewStoreOptions) (*Store, error) {
+func NewStore(opts NewStoreOptions) (StoreInterface, error) {
 	store := &Store{
 		metaTableName:      opts.MetaTableName,
 		automigrateEnabled: opts.AutomigrateEnabled,
@@ -265,4 +265,19 @@ func (st *Store) SetJSON(objectType string, objectID string, key string, value i
 	}
 
 	return st.Set(objectType, objectID, key, string(jsonValue))
+}
+
+// GetMetaTableName returns the meta table name
+func (st *Store) GetMetaTableName() string {
+	return st.metaTableName
+}
+
+// GetDB returns the database connection
+func (st *Store) GetDB() interface{} {
+	return st.db
+}
+
+// IsAutomigrateEnabled returns whether automigrate is enabled
+func (st *Store) IsAutomigrateEnabled() bool {
+	return st.automigrateEnabled
 }

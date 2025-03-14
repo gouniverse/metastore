@@ -111,13 +111,13 @@ func Test_Store_AutoMigrate(t *testing.T) {
 
 	s.AutoMigrate()
 
-	if s.metaTableName != "metas" {
-		t.Fatalf("Expected metaTableName [metas] received [%v]", s.metaTableName)
+	if s.GetMetaTableName() != "metas" {
+		t.Fatalf("Expected metaTableName [metas] received [%v]", s.GetMetaTableName())
 	}
-	if s.db == nil {
+	if s.GetDB() == nil {
 		t.Fatalf("DB Init Failure")
 	}
-	if s.automigrateEnabled != true {
+	if s.IsAutomigrateEnabled() != true {
 		t.Fatalf("Failure:  WithAutoMigrate")
 	}
 }
